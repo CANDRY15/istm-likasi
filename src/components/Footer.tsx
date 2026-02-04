@@ -1,13 +1,16 @@
+import { Link } from "react-router-dom";
 import { BookOpen, GraduationCap, FileText, Mail, Phone, MapPin } from "lucide-react";
+import logoIstm from "@/assets/logo-istm.png";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
 
   const quickLinks = [
-    { label: "Bibliothèque", href: "#bibliotheque" },
-    { label: "Travaux de Fin Cycle", href: "#tfc" },
-    { label: "Revue Scientifique", href: "#revue" },
-    { label: "À Propos", href: "#apropos" },
+    { label: "Accueil", href: "/" },
+    { label: "Bibliothèque", href: "/bibliotheque" },
+    { label: "Travaux de Fin Cycle", href: "/tfc" },
+    { label: "Revue Scientifique", href: "/revue" },
+    { label: "À Propos", href: "/apropos" },
   ];
 
   const departments = [
@@ -26,9 +29,11 @@ const Footer = () => {
           {/* Brand */}
           <div className="lg:col-span-1">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-xl bg-primary-foreground/10 flex items-center justify-center">
-                <span className="font-display font-bold text-xl">IS</span>
-              </div>
+              <img 
+                src={logoIstm} 
+                alt="ISTM Likasi" 
+                className="h-14 w-auto object-contain bg-white rounded-lg p-1"
+              />
               <div>
                 <h3 className="font-display font-bold text-lg">ISTM Likasi</h3>
                 <p className="text-sm text-primary-foreground/70">Portail Académique</p>
@@ -38,15 +43,15 @@ const Footer = () => {
               Former les professionnels de santé de demain avec excellence et dévouement.
             </p>
             <div className="flex items-center gap-4">
-              <a href="#" className="w-10 h-10 rounded-lg bg-primary-foreground/10 flex items-center justify-center hover:bg-primary-foreground/20 transition-colors">
+              <Link to="/bibliotheque" className="w-10 h-10 rounded-lg bg-primary-foreground/10 flex items-center justify-center hover:bg-primary-foreground/20 transition-colors">
                 <BookOpen className="w-5 h-5" />
-              </a>
-              <a href="#" className="w-10 h-10 rounded-lg bg-primary-foreground/10 flex items-center justify-center hover:bg-primary-foreground/20 transition-colors">
+              </Link>
+              <Link to="/tfc" className="w-10 h-10 rounded-lg bg-primary-foreground/10 flex items-center justify-center hover:bg-primary-foreground/20 transition-colors">
                 <GraduationCap className="w-5 h-5" />
-              </a>
-              <a href="#" className="w-10 h-10 rounded-lg bg-primary-foreground/10 flex items-center justify-center hover:bg-primary-foreground/20 transition-colors">
+              </Link>
+              <Link to="/revue" className="w-10 h-10 rounded-lg bg-primary-foreground/10 flex items-center justify-center hover:bg-primary-foreground/20 transition-colors">
                 <FileText className="w-5 h-5" />
-              </a>
+              </Link>
             </div>
           </div>
 
@@ -56,12 +61,12 @@ const Footer = () => {
             <ul className="space-y-2">
               {quickLinks.map((link, index) => (
                 <li key={index}>
-                  <a
-                    href={link.href}
+                  <Link
+                    to={link.href}
                     className="text-primary-foreground/70 hover:text-primary-foreground transition-colors text-sm"
                   >
                     {link.label}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>

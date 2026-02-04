@@ -1,45 +1,56 @@
 import { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, BookOpen, GraduationCap, FileText, Users, Search } from "lucide-react";
+import { Menu, X, Search } from "lucide-react";
+import logoIstm from "@/assets/logo-istm.png";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const location = useLocation();
 
   const navItems = [
-    { label: "Bibliothèque", href: "#bibliotheque", icon: BookOpen },
-    { label: "Travaux de Fin Cycle", href: "#tfc", icon: GraduationCap },
-    { label: "Revue Scientifique", href: "#revue", icon: FileText },
-    { label: "À Propos", href: "#apropos", icon: Users },
+    { label: "Accueil", href: "/" },
+    { label: "Bibliothèque", href: "/bibliotheque" },
+    { label: "Travaux de Fin Cycle", href: "/tfc" },
+    { label: "Revue Scientifique", href: "/revue" },
+    { label: "À Propos", href: "/apropos" },
   ];
 
+  const isActive = (href: string) => location.pathname === href;
+
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-card/80 backdrop-blur-lg border-b border-border">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-lg border-b border-border">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16 md:h-20">
           {/* Logo */}
-          <a href="/" className="flex items-center gap-3">
-            <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-primary flex items-center justify-center shadow-soft">
-              <span className="text-primary-foreground font-display font-bold text-lg md:text-xl">IS</span>
-            </div>
+          <Link to="/" className="flex items-center gap-3">
+            <img 
+              src={logoIstm} 
+              alt="ISTM Likasi" 
+              className="h-12 md:h-14 w-auto object-contain"
+            />
             <div className="hidden sm:block">
               <h1 className="font-display font-bold text-foreground text-lg md:text-xl leading-tight">
                 ISTM Likasi
               </h1>
               <p className="text-xs text-muted-foreground">Portail Académique</p>
             </div>
-          </a>
+          </Link>
 
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center gap-1">
             {navItems.map((item) => (
-              <a
+              <Link
                 key={item.label}
-                href={item.href}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                to={item.href}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  isActive(item.href)
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                }`}
               >
-                <item.icon className="w-4 h-4" />
                 {item.label}
-              </a>
+              </Link>
             ))}
           </nav>
 
@@ -66,15 +77,18 @@ const Header = () => {
         {isMenuOpen && (
           <nav className="lg:hidden py-4 border-t border-border animate-fade-in">
             {navItems.map((item) => (
-              <a
+              <Link
                 key={item.label}
-                href={item.href}
-                className="flex items-center gap-3 px-4 py-3 rounded-lg text-foreground hover:bg-secondary transition-colors"
+                to={item.href}
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                  isActive(item.href)
+                    ? "bg-primary text-primary-foreground"
+                    : "text-foreground hover:bg-secondary"
+                }`}
                 onClick={() => setIsMenuOpen(false)}
               >
-                <item.icon className="w-5 h-5 text-primary" />
                 {item.label}
-              </a>
+              </Link>
             ))}
             <div className="mt-4 px-4">
               <Button variant="default" className="w-full">
