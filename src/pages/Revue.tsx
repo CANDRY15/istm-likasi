@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import AdminFloatingBar from "@/components/AdminFloatingBar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, FileText, Filter, Download, Eye, Calendar, User, Send, BookOpen } from "lucide-react";
@@ -253,6 +254,7 @@ const Revue = () => {
         </section>
       </main>
       <Footer />
+      <AdminFloatingBar />
     </div>
   );
 };

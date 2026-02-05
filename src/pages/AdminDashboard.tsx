@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
@@ -28,7 +28,9 @@ type TabType = "overview" | "users" | "tfc" | "library" | "revue" | "settings";
 const AdminDashboard = () => {
   const { user, isAdmin, loading, signOut } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<TabType>("overview");
+  const [searchParams] = useSearchParams();
+  const initialTab = (searchParams.get("tab") as TabType) || "overview";
+  const [activeTab, setActiveTab] = useState<TabType>(initialTab);
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {

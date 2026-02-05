@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import AdminFloatingBar from "@/components/AdminFloatingBar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, GraduationCap, Filter, Download, Eye, Calendar, User, Upload, FileText } from "lucide-react";
@@ -243,6 +244,7 @@ const TFC = () => {
         </section>
       </main>
       <Footer />
+      <AdminFloatingBar />
     </div>
   );
 };

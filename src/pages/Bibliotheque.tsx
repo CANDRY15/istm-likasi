@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import AdminFloatingBar from "@/components/AdminFloatingBar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, BookOpen, Filter, Download, Eye, Calendar, User } from "lucide-react";
@@ -202,6 +203,7 @@ const Bibliotheque = () => {
         </section>
       </main>
       <Footer />
+      <AdminFloatingBar />
     </div>
   );
 };
