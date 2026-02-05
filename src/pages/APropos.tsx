@@ -1,5 +1,6 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import AdminFloatingBar from "@/components/AdminFloatingBar";
 import { Button } from "@/components/ui/button";
 import { Users, GraduationCap, BookOpen, Award, MapPin, Phone, Mail, Clock, Target, Heart, Lightbulb } from "lucide-react";
 
@@ -259,6 +260,7 @@ const APropos = () => {
         </section>
       </main>
       <Footer />
+      <AdminFloatingBar />
     </div>
   );
 };

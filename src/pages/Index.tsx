@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import AdminFloatingBar from "@/components/AdminFloatingBar";
 import { Button } from "@/components/ui/button";
 import { Search, BookOpen, GraduationCap, FileText, Users, ArrowRight, Award, Globe, Clock } from "lucide-react";
 import { useState } from "react";
@@ -243,6 +244,7 @@ const Index = () => {
         </section>
       </main>
       <Footer />
+      <AdminFloatingBar />
     </div>
   );
 };
