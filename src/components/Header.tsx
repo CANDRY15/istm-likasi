@@ -1,12 +1,15 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Search } from "lucide-react";
+import { Menu, X, Search, LogOut, Shield } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 import logoIstm from "@/assets/logo-istm.png";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, isAdmin, signOut } = useAuth();
 
   const navItems = [
     { label: "Accueil", href: "/" },
@@ -17,6 +20,11 @@ const Header = () => {
   ];
 
   const isActive = (href: string) => location.pathname === href;
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/");
+  };
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-lg border-b border-border">
@@ -59,9 +67,30 @@ const Header = () => {
             <Button variant="ghost" size="icon" className="hidden md:flex">
               <Search className="w-5 h-5" />
             </Button>
-            <Button variant="default" size="sm" className="hidden sm:flex">
-              Connexion
-            </Button>
+            
+            {user ? (
+              <div className="flex items-center gap-2">
+                {isAdmin && (
+                  <Link to="/admin">
+                    <Button variant="outline" size="sm" className="hidden sm:flex gap-1">
+                      <Shield className="w-4 h-4" />
+                      Admin
+                    </Button>
+                  </Link>
+                )}
+                <Button variant="ghost" size="sm" onClick={handleLogout} className="hidden sm:flex gap-1">
+                  <LogOut className="w-4 h-4" />
+                  Déconnexion
+                </Button>
+              </div>
+            ) : (
+              <Link to="/auth">
+                <Button variant="default" size="sm" className="hidden sm:flex">
+                  Connexion
+                </Button>
+              </Link>
+            )}
+            
             <Button
               variant="ghost"
               size="icon"
@@ -90,10 +119,29 @@ const Header = () => {
                 {item.label}
               </Link>
             ))}
-            <div className="mt-4 px-4">
-              <Button variant="default" className="w-full">
-                Connexion
-              </Button>
+            <div className="mt-4 px-4 space-y-2">
+              {user ? (
+                <>
+                  {isAdmin && (
+                    <Link to="/admin" onClick={() => setIsMenuOpen(false)}>
+                      <Button variant="outline" className="w-full gap-2">
+                        <Shield className="w-4 h-4" />
+                        Tableau de bord Admin
+                      </Button>
+                    </Link>
+                  )}
+                  <Button variant="ghost" className="w-full gap-2" onClick={handleLogout}>
+                    <LogOut className="w-4 h-4" />
+                    Déconnexion
+                  </Button>
+                </>
+              ) : (
+                <Link to="/auth" onClick={() => setIsMenuOpen(false)}>
+                  <Button variant="default" className="w-full">
+                    Connexion
+                  </Button>
+                </Link>
+              )}
             </div>
           </nav>
         )}
