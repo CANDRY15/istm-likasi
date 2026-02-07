@@ -14,6 +14,102 @@ export type Database = {
   }
   public: {
     Tables: {
+      articles: {
+        Row: {
+          abstract: string | null
+          authors: string
+          created_at: string
+          created_by: string | null
+          date: string
+          doi: string | null
+          downloads: number
+          file_url: string | null
+          id: string
+          status: string
+          title: string
+          updated_at: string
+          views: number
+          volume: string | null
+        }
+        Insert: {
+          abstract?: string | null
+          authors: string
+          created_at?: string
+          created_by?: string | null
+          date: string
+          doi?: string | null
+          downloads?: number
+          file_url?: string | null
+          id?: string
+          status?: string
+          title: string
+          updated_at?: string
+          views?: number
+          volume?: string | null
+        }
+        Update: {
+          abstract?: string | null
+          authors?: string
+          created_at?: string
+          created_by?: string | null
+          date?: string
+          doi?: string | null
+          downloads?: number
+          file_url?: string | null
+          id?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          views?: number
+          volume?: string | null
+        }
+        Relationships: []
+      }
+      library_documents: {
+        Row: {
+          author: string
+          category: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          downloads: number
+          file_url: string | null
+          id: string
+          title: string
+          updated_at: string
+          views: number
+          year: string
+        }
+        Insert: {
+          author: string
+          category: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          downloads?: number
+          file_url?: string | null
+          id?: string
+          title: string
+          updated_at?: string
+          views?: number
+          year: string
+        }
+        Update: {
+          author?: string
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          downloads?: number
+          file_url?: string | null
+          id?: string
+          title?: string
+          updated_at?: string
+          views?: number
+          year?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -38,6 +134,87 @@ export type Database = {
           id?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      site_content: {
+        Row: {
+          content: Json
+          created_at: string
+          id: string
+          page: string
+          section_key: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          content?: Json
+          created_at?: string
+          id?: string
+          page: string
+          section_key: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          content?: Json
+          created_at?: string
+          id?: string
+          page?: string
+          section_key?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      tfc_submissions: {
+        Row: {
+          abstract: string | null
+          author: string
+          created_at: string
+          created_by: string | null
+          department: string
+          downloads: number
+          file_url: string | null
+          id: string
+          status: string
+          supervisor: string | null
+          title: string
+          updated_at: string
+          views: number
+          year: string
+        }
+        Insert: {
+          abstract?: string | null
+          author: string
+          created_at?: string
+          created_by?: string | null
+          department: string
+          downloads?: number
+          file_url?: string | null
+          id?: string
+          status?: string
+          supervisor?: string | null
+          title: string
+          updated_at?: string
+          views?: number
+          year: string
+        }
+        Update: {
+          abstract?: string | null
+          author?: string
+          created_at?: string
+          created_by?: string | null
+          department?: string
+          downloads?: number
+          file_url?: string | null
+          id?: string
+          status?: string
+          supervisor?: string | null
+          title?: string
+          updated_at?: string
+          views?: number
+          year?: string
         }
         Relationships: []
       }

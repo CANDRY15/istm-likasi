@@ -64,31 +64,19 @@ const Header = () => {
 
           {/* Actions */}
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" className="hidden md:flex">
-              <Search className="w-5 h-5" />
-            </Button>
-            
-            {user ? (
+            {user && isAdmin && (
               <div className="flex items-center gap-2">
-                {isAdmin && (
-                  <Link to="/admin">
-                    <Button variant="outline" size="sm" className="hidden sm:flex gap-1">
-                      <Shield className="w-4 h-4" />
-                      Admin
-                    </Button>
-                  </Link>
-                )}
+                <Link to="/admin">
+                  <Button variant="outline" size="sm" className="hidden sm:flex gap-1">
+                    <Shield className="w-4 h-4" />
+                    Admin
+                  </Button>
+                </Link>
                 <Button variant="ghost" size="sm" onClick={handleLogout} className="hidden sm:flex gap-1">
                   <LogOut className="w-4 h-4" />
                   Déconnexion
                 </Button>
               </div>
-            ) : (
-              <Link to="/auth">
-                <Button variant="default" size="sm" className="hidden sm:flex">
-                  Connexion
-                </Button>
-              </Link>
             )}
             
             <Button
@@ -119,30 +107,20 @@ const Header = () => {
                 {item.label}
               </Link>
             ))}
-            <div className="mt-4 px-4 space-y-2">
-              {user ? (
-                <>
-                  {isAdmin && (
-                    <Link to="/admin" onClick={() => setIsMenuOpen(false)}>
-                      <Button variant="outline" className="w-full gap-2">
-                        <Shield className="w-4 h-4" />
-                        Tableau de bord Admin
-                      </Button>
-                    </Link>
-                  )}
-                  <Button variant="ghost" className="w-full gap-2" onClick={handleLogout}>
-                    <LogOut className="w-4 h-4" />
-                    Déconnexion
-                  </Button>
-                </>
-              ) : (
-                <Link to="/auth" onClick={() => setIsMenuOpen(false)}>
-                  <Button variant="default" className="w-full">
-                    Connexion
+            {user && isAdmin && (
+              <div className="mt-4 px-4 space-y-2">
+                <Link to="/admin" onClick={() => setIsMenuOpen(false)}>
+                  <Button variant="outline" className="w-full gap-2">
+                    <Shield className="w-4 h-4" />
+                    Tableau de bord Admin
                   </Button>
                 </Link>
-              )}
-            </div>
+                <Button variant="ghost" className="w-full gap-2" onClick={handleLogout}>
+                  <LogOut className="w-4 h-4" />
+                  Déconnexion
+                </Button>
+              </div>
+            )}
           </nav>
         )}
       </div>
