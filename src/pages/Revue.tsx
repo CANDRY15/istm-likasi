@@ -4,66 +4,20 @@ import Footer from "@/components/Footer";
 import AdminFloatingBar from "@/components/AdminFloatingBar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, FileText, Filter, Download, Eye, Calendar, User, Send, BookOpen } from "lucide-react";
+import { Search, FileText, Filter, Calendar, User, BookOpen } from "lucide-react";
+import { useArticles } from "@/hooks/useContent";
 
 const Revue = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedVolume, setSelectedVolume] = useState("all");
+  const { data: articles = [], isLoading } = useArticles();
 
-  const volumes = [
-    { id: "all", label: "Tous les volumes" },
-    { id: "vol5", label: "Volume 5 (2024)" },
-    { id: "vol4", label: "Volume 4 (2023)" },
-    { id: "vol3", label: "Volume 3 (2022)" },
-    { id: "vol2", label: "Volume 2 (2021)" },
-  ];
-
-  const articles = [
-    {
-      id: 1,
-      title: "Impact des conditions socio-économiques sur la santé maternelle au Katanga",
-      authors: ["Prof. Mukendi Jean", "Dr. Kabongo Marie"],
-      volume: "Volume 5, Numéro 2",
-      date: "Juin 2024",
-      abstract: "Cette étude analyse les facteurs socio-économiques influençant les soins prénataux...",
-      downloads: 234,
-      views: 890,
-      doi: "10.1234/istm.2024.052",
-    },
-    {
-      id: 2,
-      title: "Résistance antimicrobienne dans les établissements de santé de Likasi",
-      authors: ["Dr. Tshimanga Paul", "Prof. Ngoy Sophie"],
-      volume: "Volume 5, Numéro 1",
-      date: "Mars 2024",
-      abstract: "Une analyse complète des profils de résistance aux antibiotiques...",
-      downloads: 189,
-      views: 756,
-      doi: "10.1234/istm.2024.041",
-    },
-    {
-      id: 3,
-      title: "Prévalence de la malnutrition chez les enfants de 0 à 5 ans",
-      authors: ["Prof. Kalumba Pierre"],
-      volume: "Volume 4, Numéro 4",
-      date: "Décembre 2023",
-      abstract: "Étude transversale sur l'état nutritionnel des enfants dans la province...",
-      downloads: 312,
-      views: 1234,
-      doi: "10.1234/istm.2023.044",
-    },
-    {
-      id: 4,
-      title: "Efficacité des programmes de vaccination contre le COVID-19",
-      authors: ["Dr. Mwamba Emmanuel", "Dr. Ilunga Claire"],
-      volume: "Volume 4, Numéro 3",
-      date: "Septembre 2023",
-      abstract: "Évaluation de la couverture vaccinale et des obstacles à la vaccination...",
-      downloads: 456,
-      views: 1567,
-      doi: "10.1234/istm.2023.033",
-    },
-  ];
+  const filteredArticles = articles.filter((article) => {
+    if (!searchQuery) return true;
+    return (
+      article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      article.authors.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  });
 
   return (
     <div className="min-h-screen bg-background font-body">
@@ -83,67 +37,16 @@ const Revue = () => {
               <p className="text-primary-foreground/80 text-lg mb-8">
                 Publication scientifique dédiée à la recherche en sciences de la santé.
               </p>
-              
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Button variant="hero" size="xl">
-                  <Send className="w-5 h-5" />
-                  Soumettre un article
-                </Button>
-                <div className="relative flex-1 max-w-md w-full">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <Input
-                    type="text"
-                    placeholder="Rechercher un article..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full h-12 pl-12 pr-4 rounded-xl bg-card text-foreground shadow-elevated"
-                  />
-                </div>
+              <div className="relative max-w-md mx-auto">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="Rechercher un article..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full h-12 pl-12 pr-4 rounded-xl bg-card text-foreground shadow-elevated"
+                />
               </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Journal Info */}
-        <section className="py-8 bg-card border-b border-border">
-          <div className="container mx-auto px-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-              <div>
-                <div className="text-2xl md:text-3xl font-bold text-primary font-display">150+</div>
-                <div className="text-sm text-muted-foreground">Articles Publiés</div>
-              </div>
-              <div>
-                <div className="text-2xl md:text-3xl font-bold text-primary font-display">5</div>
-                <div className="text-sm text-muted-foreground">Volumes</div>
-              </div>
-              <div>
-                <div className="text-2xl md:text-3xl font-bold text-primary font-display">45+</div>
-                <div className="text-sm text-muted-foreground">Auteurs</div>
-              </div>
-              <div>
-                <div className="text-2xl md:text-3xl font-bold text-primary font-display">10K+</div>
-                <div className="text-sm text-muted-foreground">Téléchargements</div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Volume Filter */}
-        <section className="py-8 border-b border-border">
-          <div className="container mx-auto px-4">
-            <div className="flex items-center gap-4 overflow-x-auto pb-2">
-              <Filter className="w-5 h-5 text-muted-foreground flex-shrink-0" />
-              {volumes.map((vol) => (
-                <Button
-                  key={vol.id}
-                  variant={selectedVolume === vol.id ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSelectedVolume(vol.id)}
-                  className="flex-shrink-0"
-                >
-                  {vol.label}
-                </Button>
-              ))}
             </div>
           </div>
         </section>
@@ -153,103 +56,73 @@ const Revue = () => {
           <div className="container mx-auto px-4">
             <div className="flex items-center justify-between mb-8">
               <h2 className="font-display text-2xl md:text-3xl font-bold text-foreground">
-                Articles Récents
+                Articles Publiés
               </h2>
               <span className="text-muted-foreground">
-                {articles.length} articles
+                {filteredArticles.length} articles
               </span>
             </div>
 
-            <div className="space-y-6">
-              {articles.map((article) => (
-                <article
-                  key={article.id}
-                  className="bg-card rounded-2xl p-6 shadow-card card-hover border border-border"
-                >
-                  <div className="flex flex-col gap-4">
-                    <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <BookOpen className="w-6 h-6 text-primary" />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-display font-semibold text-foreground text-lg mb-2">
-                          {article.title}
-                        </h3>
-                        <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground mb-2">
-                          <User className="w-4 h-4" />
-                          {article.authors.join(", ")}
+            {isLoading ? (
+              <div className="text-center py-12">
+                <div className="animate-pulse text-primary font-display text-lg">Chargement...</div>
+              </div>
+            ) : filteredArticles.length === 0 ? (
+              <div className="text-center py-16">
+                <FileText className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                <h3 className="font-display text-xl font-semibold text-foreground mb-2">
+                  Aucun article disponible
+                </h3>
+                <p className="text-muted-foreground">
+                  Les articles scientifiques seront publiés prochainement.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {filteredArticles.map((article) => (
+                  <article
+                    key={article.id}
+                    className="bg-card rounded-2xl p-6 shadow-card card-hover border border-border"
+                  >
+                    <div className="flex flex-col gap-4">
+                      <div className="flex items-start gap-4">
+                        <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          <BookOpen className="w-6 h-6 text-primary" />
                         </div>
-                        <div className="flex flex-wrap items-center gap-4 text-sm">
-                          <span className="px-3 py-1 rounded-full bg-accent/20 text-accent-foreground font-medium">
-                            {article.volume}
-                          </span>
-                          <span className="flex items-center gap-1 text-muted-foreground">
-                            <Calendar className="w-4 h-4" />
-                            {article.date}
-                          </span>
-                          <span className="text-muted-foreground">
-                            DOI: {article.doi}
-                          </span>
+                        <div className="flex-1">
+                          <h3 className="font-display font-semibold text-foreground text-lg mb-2">
+                            {article.title}
+                          </h3>
+                          <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground mb-2">
+                            <User className="w-4 h-4" />
+                            {article.authors}
+                          </div>
+                          <div className="flex flex-wrap items-center gap-4 text-sm">
+                            {article.volume && (
+                              <span className="px-3 py-1 rounded-full bg-accent/20 text-accent-foreground font-medium">
+                                {article.volume}
+                              </span>
+                            )}
+                            <span className="flex items-center gap-1 text-muted-foreground">
+                              <Calendar className="w-4 h-4" />
+                              {article.date}
+                            </span>
+                            {article.doi && (
+                              <span className="text-muted-foreground">DOI: {article.doi}</span>
+                            )}
+                          </div>
                         </div>
                       </div>
+                      {article.abstract && (
+                        <p className="text-muted-foreground text-sm line-clamp-2 pl-16">
+                          {article.abstract}
+                        </p>
+                      )}
                     </div>
-
-                    <p className="text-muted-foreground text-sm line-clamp-2 pl-16">
-                      {article.abstract}
-                    </p>
-
-                    <div className="flex items-center justify-between pt-4 border-t border-border">
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Eye className="w-4 h-4" />
-                          {article.views} vues
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Download className="w-4 h-4" />
-                          {article.downloads} téléchargements
-                        </span>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button size="sm" variant="outline">
-                          <Eye className="w-4 h-4 mr-1" />
-                          Lire
-                        </Button>
-                        <Button size="sm">
-                          <Download className="w-4 h-4 mr-1" />
-                          PDF
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
-
-            {/* Load More */}
-            <div className="text-center mt-12">
-              <Button variant="outline" size="lg">
-                Voir plus d'articles
-              </Button>
-            </div>
-          </div>
-        </section>
-
-        {/* Submit CTA */}
-        <section className="py-16 bg-secondary">
-          <div className="container mx-auto px-4">
-            <div className="max-w-2xl mx-auto text-center">
-              <Send className="w-16 h-16 text-primary mx-auto mb-6" />
-              <h2 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-4">
-                Contribuez à notre revue
-              </h2>
-              <p className="text-muted-foreground mb-8">
-                Partagez vos recherches avec la communauté scientifique. Notre comité éditorial examine chaque soumission.
-              </p>
-              <Button variant="default" size="xl">
-                <Send className="w-5 h-5" />
-                Soumettre un article
-              </Button>
-            </div>
+                  </article>
+                ))}
+              </div>
+            )}
           </div>
         </section>
       </main>

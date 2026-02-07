@@ -1,12 +1,15 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useTFCs, useDeleteTFC, useLibraryDocs, useDeleteLibraryDoc, useArticles, useDeleteArticle } from "@/hooks/useContent";
 import Header from "@/components/Header";
+import TFCForm from "@/components/admin/TFCForm";
+import LibraryForm from "@/components/admin/LibraryForm";
+import ArticleForm from "@/components/admin/ArticleForm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   LayoutDashboard,
-  Users,
   BookOpen,
   GraduationCap,
   FileText,
@@ -16,14 +19,13 @@ import {
   LogOut,
   Shield,
   BarChart3,
-  Eye,
-  Download,
   Plus,
   Trash2,
-  Edit,
+  Calendar,
+  User,
 } from "lucide-react";
 
-type TabType = "overview" | "users" | "tfc" | "library" | "revue" | "settings";
+type TabType = "overview" | "tfc" | "library" | "revue" | "settings";
 
 const AdminDashboard = () => {
   const { user, isAdmin, loading, signOut } = useAuth();
@@ -32,6 +34,16 @@ const AdminDashboard = () => {
   const initialTab = (searchParams.get("tab") as TabType) || "overview";
   const [activeTab, setActiveTab] = useState<TabType>(initialTab);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showTFCForm, setShowTFCForm] = useState(false);
+  const [showLibraryForm, setShowLibraryForm] = useState(false);
+  const [showArticleForm, setShowArticleForm] = useState(false);
+
+  const { data: tfcs = [], isLoading: loadingTFCs } = useTFCs();
+  const { data: libraryDocs = [], isLoading: loadingLibrary } = useLibraryDocs();
+  const { data: articles = [], isLoading: loadingArticles } = useArticles();
+  const deleteTFC = useDeleteTFC();
+  const deleteLibraryDoc = useDeleteLibraryDoc();
+  const deleteArticle = useDeleteArticle();
 
   useEffect(() => {
     if (!loading && (!user || !isAdmin)) {
@@ -50,29 +62,13 @@ const AdminDashboard = () => {
   if (!user || !isAdmin) return null;
 
   const stats = [
-    { icon: Users, label: "Utilisateurs", value: "342", change: "+12%", color: "bg-primary/10 text-primary" },
-    { icon: GraduationCap, label: "TFC Publiés", value: "1,245", change: "+8%", color: "bg-accent/20 text-accent-foreground" },
-    { icon: BookOpen, label: "Livres", value: "5,120", change: "+3%", color: "bg-destructive/10 text-destructive" },
-    { icon: FileText, label: "Articles Revue", value: "156", change: "+15%", color: "bg-primary/10 text-primary" },
-  ];
-
-  const recentUsers = [
-    { name: "Jean Mukendi", email: "jean@istm.cd", role: "Étudiant", date: "05 Fév 2026" },
-    { name: "Marie Kabila", email: "marie@istm.cd", role: "Enseignant", date: "04 Fév 2026" },
-    { name: "Patrick Mutombo", email: "patrick@istm.cd", role: "Étudiant", date: "03 Fév 2026" },
-    { name: "Sophie Tshimanga", email: "sophie@istm.cd", role: "Chercheur", date: "02 Fév 2026" },
-  ];
-
-  const recentTFCs = [
-    { title: "Évaluation de la prise en charge des patients diabétiques", author: "Kabongo Mwamba Jean", dept: "Sciences Infirmières", status: "Publié" },
-    { title: "Analyse bactériologique des eaux de puits", author: "Tshimanga Sophie", dept: "Techniques de Laboratoire", status: "En attente" },
-    { title: "Facteurs de risque de l'accouchement prématuré", author: "Mwanza Claire", dept: "Sage-Femme", status: "Publié" },
-    { title: "Prévalence du paludisme chez les enfants", author: "Ilunga Pierre", dept: "Santé Publique", status: "En révision" },
+    { icon: GraduationCap, label: "TFC Publiés", value: tfcs.length.toString(), color: "bg-accent/20 text-accent-foreground" },
+    { icon: BookOpen, label: "Documents Bibliothèque", value: libraryDocs.length.toString(), color: "bg-primary/10 text-primary" },
+    { icon: FileText, label: "Articles Revue", value: articles.length.toString(), color: "bg-destructive/10 text-destructive" },
   ];
 
   const sidebarItems: { icon: typeof LayoutDashboard; label: string; tab: TabType }[] = [
     { icon: LayoutDashboard, label: "Vue d'ensemble", tab: "overview" },
-    { icon: Users, label: "Utilisateurs", tab: "users" },
     { icon: GraduationCap, label: "TFC", tab: "tfc" },
     { icon: BookOpen, label: "Bibliothèque", tab: "library" },
     { icon: FileText, label: "Revue", tab: "revue" },
@@ -94,7 +90,6 @@ const AdminDashboard = () => {
             <Shield className="w-5 h-5 text-primary" />
             <span className="font-display font-bold text-foreground">Admin Panel</span>
           </div>
-
           <nav className="space-y-1 flex-1">
             {sidebarItems.map((item) => (
               <button
@@ -111,7 +106,6 @@ const AdminDashboard = () => {
               </button>
             ))}
           </nav>
-
           <Button variant="ghost" className="justify-start text-destructive hover:text-destructive" onClick={handleLogout}>
             <LogOut className="w-4 h-4 mr-2" />
             Déconnexion
@@ -120,7 +114,7 @@ const AdminDashboard = () => {
 
         {/* Mobile tab bar */}
         <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border flex justify-around py-2">
-          {sidebarItems.slice(0, 5).map((item) => (
+          {sidebarItems.map((item) => (
             <button
               key={item.tab}
               onClick={() => setActiveTab(item.tab)}
@@ -142,9 +136,7 @@ const AdminDashboard = () => {
               <h1 className="font-display text-2xl md:text-3xl font-bold text-foreground">
                 {sidebarItems.find((i) => i.tab === activeTab)?.label}
               </h1>
-              <p className="text-muted-foreground text-sm mt-1">
-                Bienvenue, {user.email}
-              </p>
+              <p className="text-muted-foreground text-sm mt-1">Bienvenue, {user.email}</p>
             </div>
             <div className="relative w-full sm:w-auto">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -160,18 +152,13 @@ const AdminDashboard = () => {
           {/* Overview Tab */}
           {activeTab === "overview" && (
             <div className="space-y-8">
-              {/* Stats */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {stats.map((stat, i) => (
                   <div key={i} className="bg-card rounded-xl p-5 border border-border shadow-soft">
                     <div className="flex items-center justify-between mb-3">
                       <div className={`w-10 h-10 rounded-lg ${stat.color} flex items-center justify-center`}>
                         <stat.icon className="w-5 h-5" />
                       </div>
-                      <span className="text-xs font-medium text-primary flex items-center gap-1">
-                        <TrendingUp className="w-3 h-3" />
-                        {stat.change}
-                      </span>
                     </div>
                     <div className="text-2xl font-bold text-foreground font-display">{stat.value}</div>
                     <div className="text-sm text-muted-foreground">{stat.label}</div>
@@ -179,134 +166,52 @@ const AdminDashboard = () => {
                 ))}
               </div>
 
-              {/* Recent Activity */}
               <div className="grid lg:grid-cols-2 gap-6">
-                {/* Recent Users */}
-                <div className="bg-card rounded-xl border border-border p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-display font-semibold text-foreground">Utilisateurs Récents</h3>
-                    <Button variant="ghost" size="sm" onClick={() => setActiveTab("users")}>
-                      Voir tout
-                    </Button>
-                  </div>
-                  <div className="space-y-3">
-                    {recentUsers.map((u, i) => (
-                      <div key={i} className="flex items-center justify-between p-3 rounded-lg hover:bg-secondary transition-colors">
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
-                            {u.name.charAt(0)}
-                          </div>
-                          <div>
-                            <div className="text-sm font-medium text-foreground">{u.name}</div>
-                            <div className="text-xs text-muted-foreground">{u.email}</div>
-                          </div>
-                        </div>
-                        <span className="text-xs px-2 py-1 rounded-full bg-secondary text-muted-foreground">{u.role}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
                 {/* Recent TFCs */}
                 <div className="bg-card rounded-xl border border-border p-6">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="font-display font-semibold text-foreground">TFC Récents</h3>
-                    <Button variant="ghost" size="sm" onClick={() => setActiveTab("tfc")}>
-                      Voir tout
-                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => setActiveTab("tfc")}>Voir tout</Button>
                   </div>
-                  <div className="space-y-3">
-                    {recentTFCs.map((tfc, i) => (
-                      <div key={i} className="p-3 rounded-lg hover:bg-secondary transition-colors">
-                        <div className="text-sm font-medium text-foreground line-clamp-1">{tfc.title}</div>
-                        <div className="flex items-center justify-between mt-1">
-                          <span className="text-xs text-muted-foreground">{tfc.author}</span>
-                          <span className={`text-xs px-2 py-0.5 rounded-full ${
-                            tfc.status === "Publié" ? "bg-primary/10 text-primary" :
-                            tfc.status === "En attente" ? "bg-accent/20 text-accent-foreground" :
-                            "bg-destructive/10 text-destructive"
-                          }`}>
-                            {tfc.status}
-                          </span>
+                  {loadingTFCs ? (
+                    <p className="text-muted-foreground text-sm">Chargement...</p>
+                  ) : tfcs.length === 0 ? (
+                    <p className="text-muted-foreground text-sm">Aucun TFC publié. Ajoutez-en depuis l'onglet TFC.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {tfcs.slice(0, 4).map((tfc) => (
+                        <div key={tfc.id} className="p-3 rounded-lg hover:bg-secondary transition-colors">
+                          <div className="text-sm font-medium text-foreground line-clamp-1">{tfc.title}</div>
+                          <div className="flex items-center justify-between mt-1">
+                            <span className="text-xs text-muted-foreground">{tfc.author}</span>
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">{tfc.department}</span>
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Quick Stats Chart Placeholder */}
-              <div className="bg-card rounded-xl border border-border p-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <BarChart3 className="w-5 h-5 text-primary" />
-                  <h3 className="font-display font-semibold text-foreground">Statistiques du mois</h3>
-                </div>
-                <div className="grid grid-cols-3 gap-6 text-center py-8">
-                  <div>
-                    <div className="text-3xl font-bold text-primary font-display">89</div>
-                    <div className="text-sm text-muted-foreground mt-1">Nouveaux TFC</div>
-                  </div>
-                  <div>
-                    <div className="text-3xl font-bold text-accent-foreground font-display">2,340</div>
-                    <div className="text-sm text-muted-foreground mt-1">Téléchargements</div>
-                  </div>
-                  <div>
-                    <div className="text-3xl font-bold text-destructive font-display">56</div>
-                    <div className="text-sm text-muted-foreground mt-1">Nouveaux inscrits</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Users Tab */}
-          {activeTab === "users" && (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <p className="text-muted-foreground">Gestion des comptes utilisateurs</p>
-                <Button size="sm">
-                  <Plus className="w-4 h-4 mr-1" /> Ajouter
-                </Button>
-              </div>
-              <div className="bg-card rounded-xl border border-border overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-border bg-secondary/50">
-                        <th className="text-left p-4 text-sm font-medium text-muted-foreground">Nom</th>
-                        <th className="text-left p-4 text-sm font-medium text-muted-foreground">Email</th>
-                        <th className="text-left p-4 text-sm font-medium text-muted-foreground">Rôle</th>
-                        <th className="text-left p-4 text-sm font-medium text-muted-foreground">Date</th>
-                        <th className="text-right p-4 text-sm font-medium text-muted-foreground">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {recentUsers.map((u, i) => (
-                        <tr key={i} className="border-b border-border last:border-0 hover:bg-secondary/30">
-                          <td className="p-4">
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
-                                {u.name.charAt(0)}
-                              </div>
-                              <span className="text-sm font-medium text-foreground">{u.name}</span>
-                            </div>
-                          </td>
-                          <td className="p-4 text-sm text-muted-foreground">{u.email}</td>
-                          <td className="p-4">
-                            <span className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary">{u.role}</span>
-                          </td>
-                          <td className="p-4 text-sm text-muted-foreground">{u.date}</td>
-                          <td className="p-4 text-right">
-                            <div className="flex items-center justify-end gap-1">
-                              <Button variant="ghost" size="icon" className="h-8 w-8"><Eye className="w-4 h-4" /></Button>
-                              <Button variant="ghost" size="icon" className="h-8 w-8"><Edit className="w-4 h-4" /></Button>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive"><Trash2 className="w-4 h-4" /></Button>
-                            </div>
-                          </td>
-                        </tr>
                       ))}
-                    </tbody>
-                  </table>
+                    </div>
+                  )}
+                </div>
+
+                {/* Recent Articles */}
+                <div className="bg-card rounded-xl border border-border p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-display font-semibold text-foreground">Articles Récents</h3>
+                    <Button variant="ghost" size="sm" onClick={() => setActiveTab("revue")}>Voir tout</Button>
+                  </div>
+                  {loadingArticles ? (
+                    <p className="text-muted-foreground text-sm">Chargement...</p>
+                  ) : articles.length === 0 ? (
+                    <p className="text-muted-foreground text-sm">Aucun article publié. Ajoutez-en depuis l'onglet Revue.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {articles.slice(0, 4).map((article) => (
+                        <div key={article.id} className="p-3 rounded-lg hover:bg-secondary transition-colors">
+                          <div className="text-sm font-medium text-foreground line-clamp-1">{article.title}</div>
+                          <div className="text-xs text-muted-foreground mt-1">{article.authors}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -317,54 +222,65 @@ const AdminDashboard = () => {
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <p className="text-muted-foreground">Gestion des travaux de fin de cycle</p>
-                <Button size="sm">
-                  <Plus className="w-4 h-4 mr-1" /> Ajouter un TFC
+                <Button size="sm" onClick={() => setShowTFCForm(true)}>
+                  <Plus className="w-4 h-4 mr-1" /> Publier un TFC
                 </Button>
               </div>
-              <div className="bg-card rounded-xl border border-border overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-border bg-secondary/50">
-                        <th className="text-left p-4 text-sm font-medium text-muted-foreground">Titre</th>
-                        <th className="text-left p-4 text-sm font-medium text-muted-foreground">Auteur</th>
-                        <th className="text-left p-4 text-sm font-medium text-muted-foreground">Département</th>
-                        <th className="text-left p-4 text-sm font-medium text-muted-foreground">Statut</th>
-                        <th className="text-right p-4 text-sm font-medium text-muted-foreground">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {recentTFCs.map((tfc, i) => (
-                        <tr key={i} className="border-b border-border last:border-0 hover:bg-secondary/30">
-                          <td className="p-4 max-w-xs">
-                            <span className="text-sm font-medium text-foreground line-clamp-1">{tfc.title}</span>
-                          </td>
-                          <td className="p-4 text-sm text-muted-foreground">{tfc.author}</td>
-                          <td className="p-4">
-                            <span className="text-xs px-2 py-1 rounded-full bg-secondary text-muted-foreground">{tfc.dept}</span>
-                          </td>
-                          <td className="p-4">
-                            <span className={`text-xs px-2 py-1 rounded-full ${
-                              tfc.status === "Publié" ? "bg-primary/10 text-primary" :
-                              tfc.status === "En attente" ? "bg-accent/20 text-accent-foreground" :
-                              "bg-destructive/10 text-destructive"
-                            }`}>
-                              {tfc.status}
-                            </span>
-                          </td>
-                          <td className="p-4 text-right">
-                            <div className="flex items-center justify-end gap-1">
-                              <Button variant="ghost" size="icon" className="h-8 w-8"><Eye className="w-4 h-4" /></Button>
-                              <Button variant="ghost" size="icon" className="h-8 w-8"><Edit className="w-4 h-4" /></Button>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive"><Trash2 className="w-4 h-4" /></Button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+
+              {showTFCForm && <TFCForm onClose={() => setShowTFCForm(false)} />}
+
+              {loadingTFCs ? (
+                <p className="text-muted-foreground">Chargement...</p>
+              ) : tfcs.length === 0 ? (
+                <div className="bg-card rounded-xl border border-border p-12 text-center">
+                  <GraduationCap className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="font-display font-semibold text-foreground mb-2">Aucun TFC publié</h3>
+                  <p className="text-muted-foreground text-sm mb-4">Cliquez sur "Publier un TFC" pour ajouter le premier.</p>
+                  <Button onClick={() => setShowTFCForm(true)}>
+                    <Plus className="w-4 h-4 mr-1" /> Publier un TFC
+                  </Button>
                 </div>
-              </div>
+              ) : (
+                <div className="bg-card rounded-xl border border-border overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-border bg-secondary/50">
+                          <th className="text-left p-4 text-sm font-medium text-muted-foreground">Titre</th>
+                          <th className="text-left p-4 text-sm font-medium text-muted-foreground">Auteur</th>
+                          <th className="text-left p-4 text-sm font-medium text-muted-foreground">Département</th>
+                          <th className="text-left p-4 text-sm font-medium text-muted-foreground">Année</th>
+                          <th className="text-right p-4 text-sm font-medium text-muted-foreground">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {tfcs.map((tfc) => (
+                          <tr key={tfc.id} className="border-b border-border last:border-0 hover:bg-secondary/30">
+                            <td className="p-4 max-w-xs">
+                              <span className="text-sm font-medium text-foreground line-clamp-1">{tfc.title}</span>
+                            </td>
+                            <td className="p-4 text-sm text-muted-foreground">{tfc.author}</td>
+                            <td className="p-4">
+                              <span className="text-xs px-2 py-1 rounded-full bg-secondary text-muted-foreground">{tfc.department}</span>
+                            </td>
+                            <td className="p-4 text-sm text-muted-foreground">{tfc.year}</td>
+                            <td className="p-4 text-right">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-destructive"
+                                onClick={() => deleteTFC.mutate(tfc.id)}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -373,40 +289,51 @@ const AdminDashboard = () => {
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <p className="text-muted-foreground">Gestion de la bibliothèque numérique</p>
-                <Button size="sm">
-                  <Plus className="w-4 h-4 mr-1" /> Ajouter un livre
+                <Button size="sm" onClick={() => setShowLibraryForm(true)}>
+                  <Plus className="w-4 h-4 mr-1" /> Ajouter un document
                 </Button>
               </div>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {[
-                  { title: "Anatomie Humaine", author: "Dr. Mukendi", category: "Sciences Médicales", downloads: 234 },
-                  { title: "Soins Infirmiers", author: "Prof. Kalumba", category: "Sciences Infirmières", downloads: 189 },
-                  { title: "Microbiologie Médicale", author: "Dr. Ngoy", category: "Laboratoire", downloads: 156 },
-                  { title: "Pharmacologie", author: "Prof. Tshilumba", category: "Pharmacie", downloads: 312 },
-                  { title: "Santé Communautaire", author: "Dr. Kabwe", category: "Santé Publique", downloads: 98 },
-                  { title: "Kinésiologie", author: "Dr. Mbuyi", category: "Kinésithérapie", downloads: 145 },
-                ].map((book, i) => (
-                  <div key={i} className="bg-card rounded-xl border border-border p-5 hover:shadow-card transition-shadow">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                        <BookOpen className="w-5 h-5 text-primary" />
+
+              {showLibraryForm && <LibraryForm onClose={() => setShowLibraryForm(false)} />}
+
+              {loadingLibrary ? (
+                <p className="text-muted-foreground">Chargement...</p>
+              ) : libraryDocs.length === 0 ? (
+                <div className="bg-card rounded-xl border border-border p-12 text-center">
+                  <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="font-display font-semibold text-foreground mb-2">Aucun document</h3>
+                  <p className="text-muted-foreground text-sm mb-4">Ajoutez des documents à la bibliothèque.</p>
+                  <Button onClick={() => setShowLibraryForm(true)}>
+                    <Plus className="w-4 h-4 mr-1" /> Ajouter un document
+                  </Button>
+                </div>
+              ) : (
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {libraryDocs.map((doc) => (
+                    <div key={doc.id} className="bg-card rounded-xl border border-border p-5 hover:shadow-card transition-shadow">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                          <BookOpen className="w-5 h-5 text-primary" />
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-destructive"
+                          onClick={() => deleteLibraryDoc.mutate(doc.id)}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
                       </div>
-                      <div className="flex gap-1">
-                        <Button variant="ghost" size="icon" className="h-7 w-7"><Edit className="w-3 h-3" /></Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive"><Trash2 className="w-3 h-3" /></Button>
+                      <h4 className="font-medium text-foreground text-sm mb-1">{doc.title}</h4>
+                      <p className="text-xs text-muted-foreground mb-2">{doc.author}</p>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">{doc.category}</span>
+                        <span className="text-xs text-muted-foreground">{doc.year}</span>
                       </div>
                     </div>
-                    <h4 className="font-medium text-foreground text-sm mb-1">{book.title}</h4>
-                    <p className="text-xs text-muted-foreground mb-2">{book.author}</p>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">{book.category}</span>
-                      <span className="text-xs text-muted-foreground flex items-center gap-1">
-                        <Download className="w-3 h-3" /> {book.downloads}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -415,54 +342,63 @@ const AdminDashboard = () => {
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <p className="text-muted-foreground">Gestion de la revue scientifique</p>
-                <Button size="sm">
-                  <Plus className="w-4 h-4 mr-1" /> Nouvel article
+                <Button size="sm" onClick={() => setShowArticleForm(true)}>
+                  <Plus className="w-4 h-4 mr-1" /> Publier un article
                 </Button>
               </div>
-              <div className="bg-card rounded-xl border border-border overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-border bg-secondary/50">
-                        <th className="text-left p-4 text-sm font-medium text-muted-foreground">Titre</th>
-                        <th className="text-left p-4 text-sm font-medium text-muted-foreground">Auteur</th>
-                        <th className="text-left p-4 text-sm font-medium text-muted-foreground">Volume</th>
-                        <th className="text-left p-4 text-sm font-medium text-muted-foreground">Statut</th>
-                        <th className="text-right p-4 text-sm font-medium text-muted-foreground">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {[
-                        { title: "Impact du changement climatique sur les maladies tropicales", author: "Dr. Mukendi", volume: "Vol. 12, No. 3", status: "Publié" },
-                        { title: "Nouvelles approches en kinésithérapie respiratoire", author: "Prof. Mbuyi", volume: "Vol. 12, No. 2", status: "En révision" },
-                        { title: "Étude épidémiologique de la tuberculose", author: "Dr. Kabwe", volume: "Vol. 12, No. 1", status: "Publié" },
-                      ].map((article, i) => (
-                        <tr key={i} className="border-b border-border last:border-0 hover:bg-secondary/30">
-                          <td className="p-4 max-w-xs">
-                            <span className="text-sm font-medium text-foreground line-clamp-1">{article.title}</span>
-                          </td>
-                          <td className="p-4 text-sm text-muted-foreground">{article.author}</td>
-                          <td className="p-4 text-sm text-muted-foreground">{article.volume}</td>
-                          <td className="p-4">
-                            <span className={`text-xs px-2 py-1 rounded-full ${
-                              article.status === "Publié" ? "bg-primary/10 text-primary" : "bg-accent/20 text-accent-foreground"
-                            }`}>
-                              {article.status}
-                            </span>
-                          </td>
-                          <td className="p-4 text-right">
-                            <div className="flex items-center justify-end gap-1">
-                              <Button variant="ghost" size="icon" className="h-8 w-8"><Eye className="w-4 h-4" /></Button>
-                              <Button variant="ghost" size="icon" className="h-8 w-8"><Edit className="w-4 h-4" /></Button>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive"><Trash2 className="w-4 h-4" /></Button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+
+              {showArticleForm && <ArticleForm onClose={() => setShowArticleForm(false)} />}
+
+              {loadingArticles ? (
+                <p className="text-muted-foreground">Chargement...</p>
+              ) : articles.length === 0 ? (
+                <div className="bg-card rounded-xl border border-border p-12 text-center">
+                  <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="font-display font-semibold text-foreground mb-2">Aucun article</h3>
+                  <p className="text-muted-foreground text-sm mb-4">Publiez votre premier article scientifique.</p>
+                  <Button onClick={() => setShowArticleForm(true)}>
+                    <Plus className="w-4 h-4 mr-1" /> Publier un article
+                  </Button>
                 </div>
-              </div>
+              ) : (
+                <div className="bg-card rounded-xl border border-border overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-border bg-secondary/50">
+                          <th className="text-left p-4 text-sm font-medium text-muted-foreground">Titre</th>
+                          <th className="text-left p-4 text-sm font-medium text-muted-foreground">Auteurs</th>
+                          <th className="text-left p-4 text-sm font-medium text-muted-foreground">Volume</th>
+                          <th className="text-left p-4 text-sm font-medium text-muted-foreground">Date</th>
+                          <th className="text-right p-4 text-sm font-medium text-muted-foreground">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {articles.map((article) => (
+                          <tr key={article.id} className="border-b border-border last:border-0 hover:bg-secondary/30">
+                            <td className="p-4 max-w-xs">
+                              <span className="text-sm font-medium text-foreground line-clamp-1">{article.title}</span>
+                            </td>
+                            <td className="p-4 text-sm text-muted-foreground">{article.authors}</td>
+                            <td className="p-4 text-sm text-muted-foreground">{article.volume || "-"}</td>
+                            <td className="p-4 text-sm text-muted-foreground">{article.date}</td>
+                            <td className="p-4 text-right">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-destructive"
+                                onClick={() => deleteArticle.mutate(article.id)}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
