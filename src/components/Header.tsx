@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Search, LogOut, Shield } from "lucide-react";
+import { Menu, X, LogIn, LogOut, Shield } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import logoIstm from "@/assets/logo-istm.png";
 
@@ -64,7 +64,7 @@ const Header = () => {
 
           {/* Actions */}
           <div className="flex items-center gap-3">
-            {user && isAdmin && (
+            {user && isAdmin ? (
               <div className="flex items-center gap-2">
                 <Link to="/admin">
                   <Button variant="outline" size="sm" className="hidden sm:flex gap-1">
@@ -77,7 +77,14 @@ const Header = () => {
                   Déconnexion
                 </Button>
               </div>
-            )}
+            ) : !user ? (
+              <Link to="/auth">
+                <Button variant="outline" size="sm" className="hidden sm:flex gap-1">
+                  <LogIn className="w-4 h-4" />
+                  Connexion
+                </Button>
+              </Link>
+            ) : null}
             
             <Button
               variant="ghost"
@@ -107,7 +114,7 @@ const Header = () => {
                 {item.label}
               </Link>
             ))}
-            {user && isAdmin && (
+            {user && isAdmin ? (
               <div className="mt-4 px-4 space-y-2">
                 <Link to="/admin" onClick={() => setIsMenuOpen(false)}>
                   <Button variant="outline" className="w-full gap-2">
@@ -120,7 +127,16 @@ const Header = () => {
                   Déconnexion
                 </Button>
               </div>
-            )}
+            ) : !user ? (
+              <div className="mt-4 px-4">
+                <Link to="/auth" onClick={() => setIsMenuOpen(false)}>
+                  <Button variant="outline" className="w-full gap-2">
+                    <LogIn className="w-4 h-4" />
+                    Connexion Admin
+                  </Button>
+                </Link>
+              </div>
+            ) : null}
           </nav>
         )}
       </div>

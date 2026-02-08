@@ -1,16 +1,27 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { X } from "lucide-react";
-import { useCreateArticle } from "@/hooks/useContent";
+import { useCreateArticle, useUpdateArticle } from "@/hooks/useContent";
+
+interface ArticleData {
+  id: string;
+  title: string;
+  authors: string;
+  volume?: string | null;
+  date: string;
+  abstract?: string | null;
+  doi?: string | null;
+}
 
 interface ArticleFormProps {
   onClose: () => void;
+  editData?: ArticleData | null;
 }
 
-const ArticleForm = ({ onClose }: ArticleFormProps) => {
+const ArticleForm = ({ onClose, editData }: ArticleFormProps) => {
   const [title, setTitle] = useState("");
   const [authors, setAuthors] = useState("");
   const [volume, setVolume] = useState("");
@@ -18,20 +29,46 @@ const ArticleForm = ({ onClose }: ArticleFormProps) => {
   const [abstract, setAbstract] = useState("");
   const [doi, setDoi] = useState("");
   const createArticle = useCreateArticle();
+  const updateArticle = useUpdateArticle();
+
+  const isEditing = !!editData;
+
+  useEffect(() => {
+    if (editData) {
+      setTitle(editData.title);
+      setAuthors(editData.authors);
+      setVolume(editData.volume || "");
+      setDate(editData.date);
+      setAbstract(editData.abstract || "");
+      setDoi(editData.doi || "");
+    }
+  }, [editData]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !authors.trim() || !date.trim()) return;
-    createArticle.mutate(
-      { title, authors, volume: volume || undefined, date, abstract: abstract || undefined, doi: doi || undefined },
-      { onSuccess: onClose }
-    );
+
+    if (isEditing && editData) {
+      updateArticle.mutate(
+        { id: editData.id, title, authors, volume: volume || null, date, abstract: abstract || null, doi: doi || null },
+        { onSuccess: onClose }
+      );
+    } else {
+      createArticle.mutate(
+        { title, authors, volume: volume || undefined, date, abstract: abstract || undefined, doi: doi || undefined },
+        { onSuccess: onClose }
+      );
+    }
   };
+
+  const isPending = isEditing ? updateArticle.isPending : createArticle.isPending;
 
   return (
     <div className="bg-card rounded-xl border border-border p-6">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="font-display text-lg font-semibold text-foreground">Publier un article</h3>
+        <h3 className="font-display text-lg font-semibold text-foreground">
+          {isEditing ? "Modifier l'article" : "Publier un article"}
+        </h3>
         <Button variant="ghost" size="icon" onClick={onClose}><X className="w-4 h-4" /></Button>
       </div>
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -63,8 +100,8 @@ const ArticleForm = ({ onClose }: ArticleFormProps) => {
         </div>
         <div className="flex gap-3 justify-end">
           <Button type="button" variant="outline" onClick={onClose}>Annuler</Button>
-          <Button type="submit" disabled={createArticle.isPending}>
-            {createArticle.isPending ? "Publication..." : "Publier l'article"}
+          <Button type="submit" disabled={isPending}>
+            {isPending ? "Enregistrement..." : isEditing ? "Sauvegarder" : "Publier l'article"}
           </Button>
         </div>
       </form>

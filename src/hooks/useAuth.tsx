@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useContext, useCallback } from "react";
+import { useState, useEffect, useRef, createContext, useContext, useCallback } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -19,6 +19,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
+  const refreshIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const checkAdminRole = useCallback((userId: string) => {
     setTimeout(async () => {
@@ -36,33 +37,82 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }, 0);
   }, []);
 
+  // Proactive session refresh every 10 minutes to prevent auto-logout
+  const startSessionRefresh = useCallback(() => {
+    if (refreshIntervalRef.current) {
+      clearInterval(refreshIntervalRef.current);
+    }
+    refreshIntervalRef.current = setInterval(async () => {
+      try {
+        const { data, error } = await supabase.auth.refreshSession();
+        if (!error && data.session) {
+          setSession(data.session);
+          setUser(data.session.user);
+        }
+      } catch {
+        // silently ignore refresh errors
+      }
+    }, 10 * 60 * 1000); // every 10 minutes
+  }, []);
+
+  const stopSessionRefresh = useCallback(() => {
+    if (refreshIntervalRef.current) {
+      clearInterval(refreshIntervalRef.current);
+      refreshIntervalRef.current = null;
+    }
+  }, []);
+
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          checkAdminRole(session.user.id);
+      (event, currentSession) => {
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
+        if (currentSession?.user) {
+          checkAdminRole(currentSession.user.id);
+          startSessionRefresh();
         } else {
           setIsAdmin(false);
+          stopSessionRefresh();
         }
         setLoading(false);
       }
     );
 
     // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        checkAdminRole(session.user.id);
+    supabase.auth.getSession().then(({ data: { session: existingSession } }) => {
+      setSession(existingSession);
+      setUser(existingSession?.user ?? null);
+      if (existingSession?.user) {
+        checkAdminRole(existingSession.user.id);
+        startSessionRefresh();
       }
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
-  }, [checkAdminRole]);
+    return () => {
+      subscription.unsubscribe();
+      stopSessionRefresh();
+    };
+  }, [checkAdminRole, startSessionRefresh, stopSessionRefresh]);
+
+  // Also refresh on window focus (user comes back to tab)
+  useEffect(() => {
+    const handleFocus = async () => {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        if (!error && data.session) {
+          setSession(data.session);
+          setUser(data.session.user);
+        }
+      } catch {
+        // ignore
+      }
+    };
+
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
+  }, []);
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -83,6 +133,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const signOut = async () => {
+    stopSessionRefresh();
     await supabase.auth.signOut();
     setIsAdmin(false);
   };
