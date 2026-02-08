@@ -4,8 +4,9 @@ import Footer from "@/components/Footer";
 import AdminFloatingBar from "@/components/AdminFloatingBar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, GraduationCap, Filter, Calendar, User, FileText } from "lucide-react";
+import { Search, GraduationCap, Filter, Calendar, User, FileText, Eye } from "lucide-react";
 import { useTFCs } from "@/hooks/useContent";
+import { useTrackView } from "@/hooks/useTrackView";
 
 const TFC = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -112,43 +113,7 @@ const TFC = () => {
             ) : (
               <div className="space-y-4">
                 {filteredTFCs.map((tfc) => (
-                  <article
-                    key={tfc.id}
-                    className="bg-card rounded-2xl p-6 shadow-card card-hover border border-border"
-                  >
-                    <div className="flex flex-col lg:flex-row lg:items-center gap-4">
-                      <div className="w-14 h-14 rounded-xl bg-accent/20 flex items-center justify-center flex-shrink-0">
-                        <FileText className="w-7 h-7 text-accent" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-display font-semibold text-foreground text-lg mb-2">
-                          {tfc.title}
-                        </h3>
-                        <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <User className="w-4 h-4" />
-                            {tfc.author}
-                          </span>
-                          {tfc.supervisor && (
-                            <span className="flex items-center gap-1">
-                              <GraduationCap className="w-4 h-4" />
-                              {tfc.supervisor}
-                            </span>
-                          )}
-                          <span className="flex items-center gap-1">
-                            <Calendar className="w-4 h-4" />
-                            {tfc.year}
-                          </span>
-                        </div>
-                        <span className="inline-block mt-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
-                          {tfc.department}
-                        </span>
-                        {tfc.abstract && (
-                          <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{tfc.abstract}</p>
-                        )}
-                      </div>
-                    </div>
-                  </article>
+                  <TFCCard key={tfc.id} tfc={tfc} />
                 ))}
               </div>
             )}
@@ -158,6 +123,51 @@ const TFC = () => {
       <Footer />
       <AdminFloatingBar />
     </div>
+  );
+};
+
+const TFCCard = ({ tfc }: { tfc: any }) => {
+  useTrackView("tfc", tfc.id);
+
+  return (
+    <article className="bg-card rounded-2xl p-6 shadow-card card-hover border border-border">
+      <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+        <div className="w-14 h-14 rounded-xl bg-accent/20 flex items-center justify-center flex-shrink-0">
+          <FileText className="w-7 h-7 text-accent" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <h3 className="font-display font-semibold text-foreground text-lg mb-2">
+            {tfc.title}
+          </h3>
+          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+            <span className="flex items-center gap-1">
+              <User className="w-4 h-4" />
+              {tfc.author}
+            </span>
+            {tfc.supervisor && (
+              <span className="flex items-center gap-1">
+                <GraduationCap className="w-4 h-4" />
+                {tfc.supervisor}
+              </span>
+            )}
+            <span className="flex items-center gap-1">
+              <Calendar className="w-4 h-4" />
+              {tfc.year}
+            </span>
+            <span className="flex items-center gap-1 text-primary">
+              <Eye className="w-4 h-4" />
+              {tfc.views} vue{tfc.views !== 1 ? "s" : ""}
+            </span>
+          </div>
+          <span className="inline-block mt-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
+            {tfc.department}
+          </span>
+          {tfc.abstract && (
+            <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{tfc.abstract}</p>
+          )}
+        </div>
+      </div>
+    </article>
   );
 };
 
