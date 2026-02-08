@@ -251,6 +251,8 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_article_views: { Args: { _id: string }; Returns: undefined }
+      increment_tfc_views: { Args: { _id: string }; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
