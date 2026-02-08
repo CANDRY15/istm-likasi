@@ -1,22 +1,45 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { X } from "lucide-react";
-import { useCreateLibraryDoc } from "@/hooks/useContent";
+import { useCreateLibraryDoc, useUpdateLibraryDoc } from "@/hooks/useContent";
+
+interface LibraryData {
+  id: string;
+  title: string;
+  author: string;
+  category: string;
+  year: string;
+  description?: string | null;
+}
 
 interface LibraryFormProps {
   onClose: () => void;
+  editData?: LibraryData | null;
 }
 
-const LibraryForm = ({ onClose }: LibraryFormProps) => {
+const LibraryForm = ({ onClose, editData }: LibraryFormProps) => {
   const [title, setTitle] = useState("");
   const [author, setAuthor] = useState("");
   const [category, setCategory] = useState("");
   const [year, setYear] = useState(new Date().getFullYear().toString());
   const [description, setDescription] = useState("");
   const createDoc = useCreateLibraryDoc();
+  const updateDoc = useUpdateLibraryDoc();
+
+  const isEditing = !!editData;
+
+  useEffect(() => {
+    if (editData) {
+      setTitle(editData.title);
+      setAuthor(editData.author);
+      setCategory(editData.category);
+      setYear(editData.year);
+      setDescription(editData.description || "");
+    }
+  }, [editData]);
 
   const categories = [
     "Sciences Médicales",
@@ -30,16 +53,28 @@ const LibraryForm = ({ onClose }: LibraryFormProps) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !author.trim() || !category) return;
-    createDoc.mutate(
-      { title, author, category, year, description: description || undefined },
-      { onSuccess: onClose }
-    );
+
+    if (isEditing && editData) {
+      updateDoc.mutate(
+        { id: editData.id, title, author, category, year, description: description || null },
+        { onSuccess: onClose }
+      );
+    } else {
+      createDoc.mutate(
+        { title, author, category, year, description: description || undefined },
+        { onSuccess: onClose }
+      );
+    }
   };
+
+  const isPending = isEditing ? updateDoc.isPending : createDoc.isPending;
 
   return (
     <div className="bg-card rounded-xl border border-border p-6">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="font-display text-lg font-semibold text-foreground">Ajouter un document</h3>
+        <h3 className="font-display text-lg font-semibold text-foreground">
+          {isEditing ? "Modifier le document" : "Ajouter un document"}
+        </h3>
         <Button variant="ghost" size="icon" onClick={onClose}><X className="w-4 h-4" /></Button>
       </div>
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -77,8 +112,8 @@ const LibraryForm = ({ onClose }: LibraryFormProps) => {
         </div>
         <div className="flex gap-3 justify-end">
           <Button type="button" variant="outline" onClick={onClose}>Annuler</Button>
-          <Button type="submit" disabled={createDoc.isPending}>
-            {createDoc.isPending ? "Ajout..." : "Ajouter le document"}
+          <Button type="submit" disabled={isPending}>
+            {isPending ? "Enregistrement..." : isEditing ? "Sauvegarder" : "Ajouter le document"}
           </Button>
         </div>
       </form>

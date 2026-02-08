@@ -40,6 +40,30 @@ export const useCreateTFC = () => {
   });
 };
 
+export const useUpdateTFC = () => {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: {
+      id: string;
+      title?: string;
+      author?: string;
+      department?: string;
+      year?: string;
+      supervisor?: string | null;
+      abstract?: string | null;
+    }) => {
+      const { error } = await supabase.from("tfc_submissions").update(updates).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["tfcs"] });
+      toast({ title: "TFC modifié avec succès" });
+    },
+    onError: (e: Error) => toast({ title: "Erreur", description: e.message, variant: "destructive" }),
+  });
+};
+
 export const useDeleteTFC = () => {
   const qc = useQueryClient();
   const { toast } = useToast();
@@ -88,6 +112,29 @@ export const useCreateLibraryDoc = () => {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["library_documents"] });
       toast({ title: "Document ajouté avec succès" });
+    },
+    onError: (e: Error) => toast({ title: "Erreur", description: e.message, variant: "destructive" }),
+  });
+};
+
+export const useUpdateLibraryDoc = () => {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: {
+      id: string;
+      title?: string;
+      author?: string;
+      category?: string;
+      year?: string;
+      description?: string | null;
+    }) => {
+      const { error } = await supabase.from("library_documents").update(updates).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["library_documents"] });
+      toast({ title: "Document modifié avec succès" });
     },
     onError: (e: Error) => toast({ title: "Erreur", description: e.message, variant: "destructive" }),
   });
@@ -142,6 +189,30 @@ export const useCreateArticle = () => {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["articles"] });
       toast({ title: "Article publié avec succès" });
+    },
+    onError: (e: Error) => toast({ title: "Erreur", description: e.message, variant: "destructive" }),
+  });
+};
+
+export const useUpdateArticle = () => {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: {
+      id: string;
+      title?: string;
+      authors?: string;
+      volume?: string | null;
+      date?: string;
+      abstract?: string | null;
+      doi?: string | null;
+    }) => {
+      const { error } = await supabase.from("articles").update(updates).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["articles"] });
+      toast({ title: "Article modifié avec succès" });
     },
     onError: (e: Error) => toast({ title: "Erreur", description: e.message, variant: "destructive" }),
   });
