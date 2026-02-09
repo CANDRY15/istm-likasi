@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useContext, useCallback } from "react";
+import { useState, useEffect, useRef, createContext, useContext } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -19,10 +19,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
+  // Track which user ID we already checked admin for — prevents cascading API calls
+  const adminCheckedForRef = useRef<string | null>(null);
 
-  const checkAdminRole = useCallback((userId: string) => {
-    // Deferred to avoid Supabase deadlock inside onAuthStateChange
-    setTimeout(async () => {
+  useEffect(() => {
+    let mounted = true;
+
+    const checkAdmin = async (userId: string) => {
+      // Only check once per user to avoid cascading refresh loops
+      if (adminCheckedForRef.current === userId) return;
+      adminCheckedForRef.current = userId;
+
       try {
         const { data } = await supabase
           .from("user_roles")
@@ -30,51 +37,58 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           .eq("user_id", userId)
           .eq("role", "admin")
           .maybeSingle();
-        setIsAdmin(!!data);
+        if (mounted) setIsAdmin(!!data);
       } catch {
-        setIsAdmin(false);
+        if (mounted) setIsAdmin(false);
       }
-    }, 0);
-  }, []);
+    };
 
-  useEffect(() => {
-    // 1. Set up auth state listener FIRST
-    // The Supabase client already has autoRefreshToken: true,
-    // so it handles token renewal automatically. We just listen for state changes.
+    // 1. Set up auth state listener
+    // CRITICAL: Only check admin on SIGNED_IN / INITIAL_SESSION
+    // Never on TOKEN_REFRESHED — that causes cascading refresh loops
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
-        // Only update state — never call other Supabase methods here directly
+        if (!mounted) return;
+
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
-        
-        if (currentSession?.user) {
-          checkAdminRole(currentSession.user.id);
+
+        if (
+          (event === "SIGNED_IN" || event === "INITIAL_SESSION") &&
+          currentSession?.user
+        ) {
+          setTimeout(() => checkAdmin(currentSession.user.id), 0);
         }
-        
+
         if (event === "SIGNED_OUT") {
           setIsAdmin(false);
+          adminCheckedForRef.current = null;
         }
-        
+
         setLoading(false);
       }
     );
 
-    // 2. THEN check for existing session
+    // 2. Fallback: check for existing session
     supabase.auth.getSession().then(({ data: { session: existingSession } }) => {
-      setSession(existingSession);
-      setUser(existingSession?.user ?? null);
+      if (!mounted) return;
       if (existingSession?.user) {
-        checkAdminRole(existingSession.user.id);
+        setSession(existingSession);
+        setUser(existingSession.user);
+        setTimeout(() => checkAdmin(existingSession.user.id), 0);
       }
       setLoading(false);
     });
 
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
-  }, [checkAdminRole]);
+  }, []);
 
   const signIn = async (email: string, password: string) => {
+    // Reset so admin gets re-checked on new login
+    adminCheckedForRef.current = null;
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     return { error: error ? new Error(error.message) : null };
   };
@@ -93,6 +107,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const signOut = async () => {
+    adminCheckedForRef.current = null;
     await supabase.auth.signOut();
     setIsAdmin(false);
     setUser(null);
