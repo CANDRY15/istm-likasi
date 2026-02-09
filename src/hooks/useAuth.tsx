@@ -14,12 +14,16 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Refresh every 4 minutes (well before any token expiry)
+const REFRESH_INTERVAL_MS = 4 * 60 * 1000;
+
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const refreshIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const hadSessionRef = useRef(false);
 
   const checkAdminRole = useCallback((userId: string) => {
     setTimeout(async () => {
@@ -37,23 +41,39 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }, 0);
   }, []);
 
-  // Proactive session refresh every 10 minutes to prevent auto-logout
+  const refreshSession = useCallback(async () => {
+    try {
+      // Try refreshSession first (actively renews tokens)
+      const { data, error } = await supabase.auth.refreshSession();
+      if (!error && data.session) {
+        setSession(data.session);
+        setUser(data.session.user);
+        hadSessionRef.current = true;
+        return true;
+      }
+      // If refresh fails, try getSession as fallback
+      const { data: fallback } = await supabase.auth.getSession();
+      if (fallback.session) {
+        setSession(fallback.session);
+        setUser(fallback.session.user);
+        hadSessionRef.current = true;
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  }, []);
+
+  // Proactive session refresh on interval
   const startSessionRefresh = useCallback(() => {
     if (refreshIntervalRef.current) {
       clearInterval(refreshIntervalRef.current);
     }
-    refreshIntervalRef.current = setInterval(async () => {
-      try {
-        const { data, error } = await supabase.auth.refreshSession();
-        if (!error && data.session) {
-          setSession(data.session);
-          setUser(data.session.user);
-        }
-      } catch {
-        // silently ignore refresh errors
-      }
-    }, 10 * 60 * 1000); // every 10 minutes
-  }, []);
+    refreshIntervalRef.current = setInterval(() => {
+      refreshSession();
+    }, REFRESH_INTERVAL_MS);
+  }, [refreshSession]);
 
   const stopSessionRefresh = useCallback(() => {
     if (refreshIntervalRef.current) {
@@ -69,11 +89,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         if (currentSession?.user) {
+          hadSessionRef.current = true;
           checkAdminRole(currentSession.user.id);
           startSessionRefresh();
         } else {
-          setIsAdmin(false);
-          stopSessionRefresh();
+          // Only clear admin if user explicitly signed out
+          if (event === "SIGNED_OUT") {
+            setIsAdmin(false);
+            hadSessionRef.current = false;
+            stopSessionRefresh();
+          } else if (hadSessionRef.current && event === "TOKEN_REFRESHED") {
+            // Token refreshed but no session — try recovery
+            refreshSession();
+          }
         }
         setLoading(false);
       }
@@ -81,9 +109,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session: existingSession } }) => {
-      setSession(existingSession);
-      setUser(existingSession?.user ?? null);
       if (existingSession?.user) {
+        setSession(existingSession);
+        setUser(existingSession.user);
+        hadSessionRef.current = true;
         checkAdminRole(existingSession.user.id);
         startSessionRefresh();
       }
@@ -94,25 +123,39 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       subscription.unsubscribe();
       stopSessionRefresh();
     };
-  }, [checkAdminRole, startSessionRefresh, stopSessionRefresh]);
+  }, [checkAdminRole, startSessionRefresh, stopSessionRefresh, refreshSession]);
 
-  // Also refresh on window focus (user comes back to tab)
+  // Refresh on visibility change AND focus (covers all scenarios)
   useEffect(() => {
-    const handleFocus = async () => {
-      try {
-        const { data, error } = await supabase.auth.getSession();
-        if (!error && data.session) {
-          setSession(data.session);
-          setUser(data.session.user);
-        }
-      } catch {
-        // ignore
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible" && hadSessionRef.current) {
+        refreshSession();
       }
     };
 
+    const handleFocus = () => {
+      if (hadSessionRef.current) {
+        refreshSession();
+      }
+    };
+
+    // Also handle online event (reconnecting after network loss)
+    const handleOnline = () => {
+      if (hadSessionRef.current) {
+        refreshSession();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
     window.addEventListener("focus", handleFocus);
-    return () => window.removeEventListener("focus", handleFocus);
-  }, []);
+    window.addEventListener("online", handleOnline);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("focus", handleFocus);
+      window.removeEventListener("online", handleOnline);
+    };
+  }, [refreshSession]);
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -133,9 +176,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const signOut = async () => {
+    hadSessionRef.current = false;
     stopSessionRefresh();
     await supabase.auth.signOut();
     setIsAdmin(false);
+    setUser(null);
+    setSession(null);
   };
 
   return (
