@@ -1,30 +1,11 @@
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { FileText, ArrowRight, Calendar, User, BookMarked } from "lucide-react";
+import { FileText, ArrowRight, Calendar, User, BookMarked, Eye, ChevronRight } from "lucide-react";
+import { useArticles } from "@/hooks/useContent";
 
 const RevueSection = () => {
-  const articles = [
-    {
-      title: "L'impact de la nutrition sur la santé maternelle et infantile en milieu rural congolais",
-      authors: "Prof. Kalombo M., Dr. Ngoy P.",
-      date: "Janvier 2024",
-      category: "Santé Publique",
-      abstract: "Cette étude examine les effets de la malnutrition sur les issues de grossesse...",
-    },
-    {
-      title: "Nouvelles approches thérapeutiques dans le traitement de la tuberculose multirésistante",
-      authors: "Dr. Kabamba L., Prof. Mwanza K.",
-      date: "Décembre 2023",
-      category: "Médecine",
-      abstract: "Une revue systématique des traitements innovants contre la TB-MDR...",
-    },
-    {
-      title: "Évaluation de la qualité des services de laboratoire dans les hôpitaux de référence",
-      authors: "Dr. Tshilombo A.",
-      date: "Novembre 2023",
-      category: "Laboratoire",
-      abstract: "Analyse comparative des pratiques de laboratoire et recommandations...",
-    },
-  ];
+  const { data: articles = [], isLoading } = useArticles();
+  const displayArticles = articles.slice(0, 3);
 
   return (
     <section id="revue" className="py-20 md:py-28 bg-primary/5">
@@ -43,53 +24,85 @@ const RevueSection = () => {
           </p>
         </div>
 
-        {/* Articles Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-          {articles.map((article, index) => (
-            <article
-              key={index}
-              className="bg-card rounded-2xl overflow-hidden shadow-soft border border-border/50 card-hover group"
-            >
-              {/* Header */}
-              <div className="h-3 bg-gradient-to-r from-primary to-primary/60" />
-              
-              <div className="p-6">
-                {/* Category */}
-                <span className="inline-block px-3 py-1 bg-secondary text-sm text-muted-foreground rounded-full mb-4">
-                  {article.category}
-                </span>
-
-                {/* Title */}
-                <h3 className="font-display text-lg font-semibold text-foreground mb-3 line-clamp-2 group-hover:text-primary transition-colors">
-                  {article.title}
-                </h3>
-
-                {/* Abstract */}
-                <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
-                  {article.abstract}
-                </p>
-
-                {/* Meta */}
-                <div className="flex flex-col gap-2 text-sm text-muted-foreground mb-4">
-                  <div className="flex items-center gap-2">
-                    <User className="w-4 h-4" />
-                    <span className="truncate">{article.authors}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4" />
-                    <span>{article.date}</span>
-                  </div>
+        {/* Articles */}
+        {isLoading ? (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="bg-card rounded-2xl overflow-hidden shadow-soft border border-border/50 animate-pulse">
+                <div className="h-3 bg-primary/20" />
+                <div className="p-6 space-y-3">
+                  <div className="h-4 bg-muted rounded w-1/3" />
+                  <div className="h-5 bg-muted rounded w-full" />
+                  <div className="h-4 bg-muted rounded w-2/3" />
                 </div>
-
-                {/* CTA */}
-                <Button variant="ghost" size="sm" className="w-full group/btn">
-                  Lire l'article
-                  <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
-                </Button>
               </div>
-            </article>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : displayArticles.length === 0 ? (
+          <div className="text-center py-12 mb-12">
+            <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+            <p className="text-muted-foreground">Les articles scientifiques seront publiés prochainement.</p>
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+            {displayArticles.map((article) => (
+              <article
+                key={article.id}
+                className="bg-card rounded-2xl overflow-hidden shadow-soft border border-border/50 card-hover group"
+              >
+                {/* Header accent */}
+                <div className="h-1.5 bg-gradient-to-r from-primary to-primary/60" />
+
+                <div className="p-6">
+                  {/* Volume badge */}
+                  {article.volume && (
+                    <span className="inline-block px-3 py-1 bg-secondary text-sm text-muted-foreground rounded-full mb-4">
+                      {article.volume}
+                    </span>
+                  )}
+
+                  {/* Title */}
+                  <h3 className="font-display text-lg font-semibold text-foreground mb-3 line-clamp-2 group-hover:text-primary transition-colors">
+                    {article.title}
+                  </h3>
+
+                  {/* Abstract */}
+                  {article.abstract && (
+                    <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
+                      {article.abstract}
+                    </p>
+                  )}
+
+                  {/* Meta */}
+                  <div className="flex flex-col gap-2 text-sm text-muted-foreground mb-4">
+                    <div className="flex items-center gap-2">
+                      <User className="w-4 h-4" />
+                      <span className="truncate">{article.authors}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4" />
+                        <span>{article.date}</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-primary">
+                        <Eye className="w-3.5 h-3.5" />
+                        <span className="text-xs">{article.views}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* CTA */}
+                  <Link to="/revue">
+                    <Button variant="ghost" size="sm" className="w-full group/btn">
+                      Lire l'article
+                      <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+                    </Button>
+                  </Link>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
 
         {/* Call to Action */}
         <div className="text-center">
@@ -99,15 +112,18 @@ const RevueSection = () => {
             </div>
             <div className="text-center sm:text-left">
               <h3 className="font-display text-lg font-semibold text-foreground mb-1">
-                Vous êtes chercheur ou enseignant ?
+                Explorer la revue complète
               </h3>
               <p className="text-muted-foreground text-sm">
-                Soumettez votre article pour publication dans notre revue
+                {articles.length} articles publiés en accès libre
               </p>
             </div>
-            <Button variant="default" size="lg" className="sm:ml-4">
-              Soumettre un article
-            </Button>
+            <Link to="/revue">
+              <Button variant="default" size="lg" className="sm:ml-4">
+                Accéder à la revue
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </Link>
           </div>
         </div>
       </div>
